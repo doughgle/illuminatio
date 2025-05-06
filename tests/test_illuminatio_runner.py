@@ -1,6 +1,5 @@
 import pytest
-import nmap
-from unittest.mock import MagicMock
+from unittest.mock import MagicMock, patch
 from illuminatio.illuminatio_runner import (
     build_result_string,
     extract_results_from_nmap,
@@ -52,15 +51,31 @@ def test_build_result_string(test_input, expected):
     assert build_result_string(**test_input) == expected
 
 
-def create_nmap_mock(hosts: list()):
-    nmap_mock = nmap.PortScanner()
+def create_nmap_mock(hosts: list):
+    """Create a mock nmap scanner without requiring the actual nmap binary"""
+    nmap_mock = MagicMock()
     nmap_mock.all_hosts = MagicMock(return_value=hosts)
     nmap_mock._scan_result = MagicMock(return_value={"scan"})
     if len(hosts) > 0:
-        nmap_mock[hosts[0]].all_protocols = MagicMock(return_value=["tcp"])
-        nmap_mock[hosts[0]]["tcp"].keys = MagicMock(return_value=[80])
-        nmap_mock[hosts[0]].tcp = MagicMock(
+        # Setup host access via dictionary-style lookup
+        host_mock = MagicMock()
+        host_mock.all_protocols = MagicMock(return_value=["tcp"])
+
+        # Setup TCP port access
+        tcp_dict = MagicMock()
+        tcp_dict.keys = MagicMock(return_value=[80])
+        host_mock.__getitem__.side_effect = (
+            lambda key: tcp_dict if key == "tcp" else MagicMock()
+        )
+
+        # Setup tcp method
+        host_mock.tcp = MagicMock(
             return_value={"state": "open", "reason": "syn-ack", "name": "http"}
+        )
+
+        # Make host accessible via dictionary-style lookup on nmap_mock
+        nmap_mock.__getitem__.side_effect = (
+            lambda key: host_mock if key in hosts else MagicMock()
         )
 
     return nmap_mock
@@ -124,7 +139,9 @@ def create_nmap_mock(hosts: list()):
         ),
     ],
 )
-def test_extract_results_from_nmap(test_input, expected):
-    test_input["nmap_res"] = create_nmap_mock(test_input["hosts"])
-    test_input.pop("hosts", None)
+@patch("nmap.PortScanner", new_callable=MagicMock)
+def test_extract_results_from_nmap(mock_port_scanner, test_input, expected):
+    # Replace the import of nmap.PortScanner with our mock
+    hosts = test_input.pop("hosts")
+    test_input["nmap_res"] = create_nmap_mock(hosts)
     assert extract_results_from_nmap(**test_input) == expected
