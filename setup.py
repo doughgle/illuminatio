@@ -10,13 +10,15 @@
 """
 import sys
 
-from pkg_resources import require, VersionConflict
 from setuptools import setup
 
 try:
-    require('setuptools>=38.3')
-except VersionConflict:
-    print("Error: version of setuptools is too old (<38.3)!")
+    import setuptools
+    if int(setuptools.__version__.split('.')[0]) < 38:
+        print("Error: version of setuptools is too old (<38)!")
+        sys.exit(1)
+except (ImportError, ValueError):
+    print("Error: setuptools is not properly installed!")
     sys.exit(1)
 
 

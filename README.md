@@ -24,7 +24,7 @@ Follow these instructions to get illuminatio up and running.
 
 ## Prerequisites
 
-- Python 3.6 or greater
+- Python 3.8 or greater
 - Pip 3
 
 ## Installation
@@ -162,6 +162,29 @@ Commands:
   run
 ```
 
+## Running Tests
+
+To run the unit tests for illuminatio, you can use pytest:
+
+```bash
+# Run all unit tests
+pytest
+
+# Run unit tests and generate coverage report
+pytest --cov illuminatio --cov-report term-missing
+
+# Skip end-to-end tests (which require a running Kubernetes cluster)
+pytest -m "not e2e"
+
+# Run only slow tests
+pytest -m slow
+
+# Run tests with detailed output
+pytest --verbose
+```
+
+For more pytest options, see the configuration in `pyproject.toml` or run `pytest --help`.
+
 ## Docker Usage
 
 Instead of installing the `illumnatio` cli on your machine you can also use our Docker image.
@@ -185,13 +208,14 @@ If the minikube VM is not reachable from your container try to pass the `--net=h
 
 ## Compatibility
 
-illuminatio 1.1 was tested using:
+illuminatio has been tested with the following Python versions:
+- Python 3.8
+- Python 3.9
+- Python 3.10
+- Python 3.11
+- Python 3.12
 
-- python 3.5.2
-- pip 19.2.1
-
-illuminatio 1.1 is confirmed to be working properly with the following kubernetes environments:
-
+illuminatio is confirmed to be working properly with the following kubernetes environments:
 - minikube v0.34.1, kubernetes v1.13.3
 - Google Kubernetes Engine, v1.12.8-gke.10
 - kubeadm 1.15.0-00, kubernetes v1.15.2
