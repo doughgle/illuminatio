@@ -34,7 +34,7 @@ def create_role_binding_manifest_for_service_account(namespace, name, sa_name):
     role_ref = k8s.client.V1RoleRef(
         name="illuminatio", api_group="rbac.authorization.k8s.io", kind="ClusterRole"
     )
-    rb_subject = k8s.client.V1Subject(
+    rb_subject = k8s.client.RbacV1Subject(
         namespace=namespace, name=sa_name, kind="ServiceAccount"
     )
     return k8s.client.V1ClusterRoleBinding(
@@ -50,7 +50,7 @@ def update_role_binding_manifest(
     """
     existing_ns = [sub.namespace for sub in role_binding.subjects]
     rb_subjects = [
-        k8s.client.V1Subject(namespace=ns, name=sa_name, kind="ServiceAccount")
+        k8s.client.RbacV1Subject(namespace=ns, name=sa_name, kind="ServiceAccount")
         for ns in namespaces
         if ns not in existing_ns
     ]
