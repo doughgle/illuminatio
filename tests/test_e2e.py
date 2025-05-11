@@ -7,7 +7,7 @@ from tests.utils import wait_for_deployments_ready
 
 E2E_INPUT_MANIFEST = "e2e-manifests/{}.yml"
 E2E_EXPECTED_YAML = "e2e-manifests/expected/{}.yml"
-E2E_RUNNER_IMAGE = "localhost:5000/illuminatio-runner:dev"
+E2E_RUNNER_IMAGE = "illuminatio-runner:dev"
 
 
 @pytest.fixture
