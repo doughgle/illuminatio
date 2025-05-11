@@ -2,19 +2,14 @@
 """
 Mandatory file for this python module
 """
+# Simplified version detection that works with Python 3.12+
 try:
-    # Python 3.8+
-    from importlib.metadata import version, PackageNotFoundError
+    # For installed package
+    from importlib.metadata import version as v
     try:
-        # Change here if project is renamed and does not equal the package name
-        __version__ = version(__name__)
-    except PackageNotFoundError:
+        __version__ = v("illuminatio")
+    except Exception:
         __version__ = "unknown"
 except ImportError:
-    # Fallback for older Python versions
-    from pkg_resources import get_distribution, DistributionNotFound
-    try:
-        # Change here if project is renamed and does not equal the package name
-        __version__ = get_distribution(__name__).version
-    except DistributionNotFound:
-        __version__ = "unknown"
+    # If import fails, default to unknown
+    __version__ = "unknown"
