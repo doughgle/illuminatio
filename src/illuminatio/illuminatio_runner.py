@@ -236,43 +236,112 @@ def get_docker_network_namespace(pod_namespace, pod_name):
     """
     Fetches and retrieves the network namespace information
     of a docker container running inside a desired pod
+    
+    Args:
+        pod_namespace: The namespace of the pod
+        pod_name: The name of the pod
+        
+    Returns:
+        The network namespace path string
+        
+    Raises:
+        ValueError: If the network namespace cannot be determined
+        ConnectionError: If the Kubernetes API server cannot be reached
     """
     LOGGER.info("getting network namespace from docker")
-    k8s.config.load_incluster_config()
-    configuration = k8s.client.Configuration()
-    api_instance = k8s.client.CoreV1Api(k8s.client.ApiClient(configuration))
-    pretty = "true"
-    exact = False  # also retrieve the namespace
-    export = False  # also retrieve unspecifiable fields (pod uid)
-    pod = api_instance.read_namespaced_pod(
-        pod_name, pod_namespace, pretty=pretty, exact=exact, export=export
-    )
+    try:
+        # Try to get the Kubernetes API server host and port from environment variables
+        k8s_host = os.environ.get("KUBERNETES_SERVICE_HOST")
+        k8s_port = os.environ.get("KUBERNETES_SERVICE_PORT")
+        
+        if k8s_host and k8s_port:
+            LOGGER.info("Using Kubernetes API at %s:%s", k8s_host, k8s_port)
+        else:
+            LOGGER.warning("KUBERNETES_SERVICE_HOST or KUBERNETES_SERVICE_PORT not set")
+        
+        # Use the standard in-cluster configuration which handles:
+        # 1. The API server host/port from environment variables
+        # 2. The service account token for authentication
+        # 3. The CA certificate for secure SSL verification
+        LOGGER.info("Loading in-cluster configuration for secure API access")
+        k8s.config.load_incluster_config()
+        api_instance = k8s.client.CoreV1Api()
+        pretty = "true"
+        LOGGER.debug("Attempting to read pod %s in namespace %s", pod_name, pod_namespace)
+        pod = api_instance.read_namespaced_pod(
+            pod_name, pod_namespace, pretty=pretty
+        )
+    except k8s.config.config_exception.ConfigException as e:
+        LOGGER.error("Failed to load Kubernetes config: %s", str(e))
+        raise ConnectionError(f"Failed to connect to Kubernetes API: {str(e)}") from e
+    except k8s.client.rest.ApiException as e:
+        LOGGER.error("Kubernetes API error: %s", str(e))
+        raise ConnectionError(f"Failed to get pod information: {str(e)}") from e
     pod_uid = pod.metadata.uid
     LOGGER.info("pod_uid: %s", pod_uid)
     if pod_uid is None:
         raise ValueError("Failed to retrieve pod uid")
 
-    client = docker.from_env()
-    LOGGER.info("fetching pause containers")
-    pause_containers = client.containers.list(
-        filters={
-            "label": [
-                "io.kubernetes.docker.type=podsandbox",
-                "io.kubernetes.pod.uid=%s" % pod_uid,
-            ]
-        }
-    )
-    if len(pause_containers) != 1:
-        raise ValueError(
-            "There should be only one pause container, found %d of them."
-            % len(pause_containers)
+    try:
+        client = docker.from_env()
+        LOGGER.info("fetching pause containers")
+        pause_containers = client.containers.list(
+            filters={
+                "label": [
+                    "io.kubernetes.docker.type=podsandbox",
+                    "io.kubernetes.pod.uid=%s" % pod_uid,
+                ]
+            }
         )
-    container = pause_containers[0]
-    LOGGER.info("inspecting pause container")
-    inspect = client.api.inspect_container(container.id)
-    net_ns = inspect.get("NetworkSettings", {}).get("SandboxKey", {})
-    if not net_ns:
-        raise ValueError("Could not fetch Network Namespace from Docker Runtime.")
+        
+        if not pause_containers:
+            LOGGER.warning("No pause containers found with pod UID %s, trying alternate method", pod_uid)
+            # Try alternate method - look for containers with name matching the pod
+            all_containers = client.containers.list()
+            pause_containers = [c for c in all_containers if pod_name in c.name]
+            
+            if not pause_containers:
+                LOGGER.error("Could not find any containers for pod %s", pod_name)
+                # Last resort - run diagnostic commands and log the output
+                try:
+                    LOGGER.info("Available containers:")
+                    for c in all_containers:
+                        LOGGER.info("  - %s (ID: %s)", c.name, c.id)
+                    
+                    # Diagnostic: List all pods in the namespace
+                    pods_in_ns = api_instance.list_namespaced_pod(pod_namespace)
+                    LOGGER.info("Pods in namespace %s:", pod_namespace)
+                    for p in pods_in_ns.items:
+                        LOGGER.info("  - %s (UID: %s)", p.metadata.name, p.metadata.uid)
+                except Exception as diag_error:
+                    LOGGER.error("Error during diagnostics: %s", str(diag_error))
+                
+                raise ValueError(f"Could not find any containers for pod {pod_name}")
+        
+        if len(pause_containers) != 1:
+            LOGGER.warning("Found %d containers, expected 1. Using the first one.", len(pause_containers))
+        
+        container = pause_containers[0]
+        LOGGER.info("inspecting pause container %s (ID: %s)", container.name, container.id)
+        inspect = client.api.inspect_container(container.id)
+        net_ns = inspect.get("NetworkSettings", {}).get("SandboxKey", {})
+        
+        if not net_ns:
+            # Try alternate path for network namespace
+            LOGGER.warning("SandboxKey not found, trying alternate methods")
+            pid = inspect.get("State", {}).get("Pid")
+            if pid:
+                LOGGER.info("Found container PID: %s, checking /proc namespace", pid)
+                net_ns = f"/proc/{pid}/ns/net"
+                if os.path.exists(net_ns):
+                    return net_ns
+            
+            raise ValueError("Could not fetch Network Namespace from Docker Runtime.")
+        
+        return net_ns
+    except docker.errors.DockerException as e:
+        LOGGER.error("Docker error: %s", str(e))
+        raise ValueError(f"Error accessing Docker: {str(e)}") from e
     return net_ns
 
 
