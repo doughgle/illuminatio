@@ -1,8 +1,8 @@
 # illuminatio - The kubernetes network policy validator
 
-[![Build Status](https://github.com/doughgle/illuminatio/actions/workflows/build-and-push.yml/badge.svg)](https://github.com/inovex/illuminatio/actions/workflows/build-and-push.yml)
-[![codecov](https://codecov.io/gh/inovex/illuminatio/branch/master/graph/badge.svg)](https://codecov.io/gh/inovex/illuminatio)
-[![Docker Image](https://img.shields.io/badge/container-GHCR-blue)](https://github.com/inovex/illuminatio/pkgs/container/illuminatio)
+[![Build Status](https://github.com/doughgle/illuminatio/actions/workflows/ci.yml/badge.svg)](https://github.com/doughgle/illuminatio/actions/workflows/ci.yml)
+[![codecov](https://codecov.io/gh/doughgle/illuminatio/branch/master/graph/badge.svg)](https://codecov.io/gh/doughgle/illuminatio)
+[![Docker Image](https://img.shields.io/badge/container-GHCR-blue)](https://github.com/doughgle/illuminatio/pkgs/container/illuminatio)
 
 ![logo](/img/logo_small.png)
 

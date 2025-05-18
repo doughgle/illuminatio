@@ -2,14 +2,14 @@
 
 ## Prerequisites
 
-- Python 3
+- Python 3 (tested with 3.12)
 - [virtualenv](https://docs.python-guide.org/dev/virtualenvs/#lower-level-virtualenv)
-- [minikube](https://github.com/kubernetes/minikube) (tested with version: v0.34.1)
+- [minikube](https://github.com/kubernetes/minikube) (tested with version: v1.35)
 
 ## Setting up the development environment
 
 ```bash
-virtualenv -p python3.7 .venv
+python3 -m venv .venv
 source .venv/bin/activate
 pip3 install -r requirements.txt
 ```
@@ -147,7 +147,7 @@ DOCKER_REGISTRY=$(minikube ip) ./local_dev/run_e2e_tests.sh
 In order to run the unit tests:
 
 ```bash
-python setup.py test --addopts="-m 'not e2e' --runslow"
+pytest -m 'not e2e' --runslow
 ```
 
 ## Cleanup
