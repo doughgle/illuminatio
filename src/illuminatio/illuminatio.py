@@ -264,7 +264,18 @@ def transform_results(
                 LOGGER.debug("mapped_sender_pod: %s", mapped_sender_pod)
                 LOGGER.debug("mapped_receiver_pod: %s", mapped_receiver_pod)
                 LOGGER.debug("raw_results: %s", json.dumps(raw_results))
-                # FIXME: https://github.com/inovex/illuminatio/issues/98
+                # First check if mapped_sender_pod exists in raw_results
+                if mapped_sender_pod not in raw_results:
+                    LOGGER.warning("Sender pod %s not found in raw_results", mapped_sender_pod)
+                    transformed[sender_pod][receiver_pod] = {}  # Initialize empty dict for this receiver
+                    continue
+                
+                # Then check if mapped_receiver_pod exists in raw_results[mapped_sender_pod]
+                if mapped_receiver_pod not in raw_results[mapped_sender_pod]:
+                    LOGGER.warning("Receiver pod %s not found in raw_results[%s]", mapped_receiver_pod, mapped_sender_pod)
+                    transformed[sender_pod][receiver_pod] = {}  # Initialize empty dict for this receiver
+                    continue
+                
                 if mapped_port in raw_results[mapped_sender_pod][mapped_receiver_pod]:
                     # fetch all requests from desired ports
                     transformed[sender_pod][receiver_pod][port] = raw_results[
