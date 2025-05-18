@@ -53,7 +53,7 @@ pip3 install illuminatio
 or directly from the repository:
 
 ```bash
-pip3 install git+https://github.com/inovex/illuminatio
+pip3 install git+https://github.com/doughgle/illuminatio
 ```
 
 ### Kubectl plugin
@@ -206,7 +206,7 @@ Instead of installing the `illumnatio` cli on your machine you can also use our 
 You will need to provide the `kubeconfig` to the container and probably some certificates:
 
 ```bash
-docker run -ti -v ~/.kube/config:/kubeconfig:ro inovex/illuminatio illuminatio clean run
+docker run -ti -v ~/.kube/config:/kubeconfig:ro doughgle/illuminatio:master illuminatio clean run
 ```
 
 Please note that some external authentication mechanisms (e.g. GCP / gcloud CLI) don't work correctly inside the container.
@@ -216,7 +216,7 @@ Please note that some external authentication mechanisms (e.g. GCP / gcloud CLI)
 Minikube will store the certificates in the users home so we need to pass these to the container:
 
 ```bash
-docker run -ti -v "${HOME}/.minikube":"${HOME}/.minikube" -v "${HOME}/.kube:"/home/illuminatio/.kube:ro inovex/illuminatio illuminatio clean run
+docker run -ti -v "${HOME}/.minikube":"${HOME}/.minikube" -v "${HOME}/.kube:"/home/illuminatio/.kube:ro doughgle/illuminatio illuminatio:master clean run
 ```
 
 If the minikube VM is not reachable from your container try to pass the `--net=host` flag to the docker run command.
