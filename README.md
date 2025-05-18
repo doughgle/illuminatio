@@ -1,7 +1,8 @@
 # illuminatio - The kubernetes network policy validator
 
-[![Build Status](https://travis-ci.org/inovex/illuminatio.svg?branch=master)](https://travis-ci.org/inovex/illuminatio)
+[![Build Status](https://github.com/doughgle/illuminatio/actions/workflows/build-and-push.yml/badge.svg)](https://github.com/inovex/illuminatio/actions/workflows/build-and-push.yml)
 [![codecov](https://codecov.io/gh/inovex/illuminatio/branch/master/graph/badge.svg)](https://codecov.io/gh/inovex/illuminatio)
+[![Docker Image](https://img.shields.io/badge/container-GHCR-blue)](https://github.com/inovex/illuminatio/pkgs/container/illuminatio)
 
 ![logo](/img/logo_small.png)
 
@@ -28,6 +29,20 @@ Follow these instructions to get illuminatio up and running.
 - Pip 3
 
 ## Installation
+
+### Using Container Images
+
+The easiest way to use illuminatio is via container images from GitHub Container Registry:
+
+```bash
+docker run --rm \
+--add-host=host.docker.internal:host-gateway \
+-v $HOME/.kube/config:/kubeconfig \
+ghcr.io/doughgle/illuminatio:master \
+illuminatio clean run
+```
+
+### Using Python Package
 
 with pip:
 
